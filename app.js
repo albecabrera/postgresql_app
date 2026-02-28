@@ -1,4 +1,144 @@
-// ── Exercises ────────────────────────────────────────────────────────────────
+// ── CodeMirror 6 imports ──────────────────────────────────────────────────────
+import { EditorView, keymap, placeholder } from 'https://esm.sh/@codemirror/view@6'
+import { EditorState }                     from 'https://esm.sh/@codemirror/state@6'
+import { basicSetup }                      from 'https://esm.sh/codemirror@6'
+import { sql }                             from 'https://esm.sh/@codemirror/lang-sql@6'
+import { syntaxHighlighting, HighlightStyle } from 'https://esm.sh/@codemirror/language@6'
+import { tags }                            from 'https://esm.sh/@lezer/highlight@1'
+import { indentWithTab }                   from 'https://esm.sh/@codemirror/commands@6'
+
+// ── Custom Theme ──────────────────────────────────────────────────────────────
+const myTheme = EditorView.theme({
+  '&': {
+    background: '#161b27',
+    color: '#e2e8f0',
+  },
+  '.cm-content': {
+    caretColor: '#5b8dee',
+    padding: '10px 0',
+  },
+  '.cm-gutters': {
+    background: '#1e2535',
+    color: '#4a5a7a',
+    border: 'none',
+    borderRight: '1px solid #2a3347',
+    userSelect: 'none',
+  },
+  '.cm-lineNumbers .cm-gutterElement': {
+    padding: '0 10px 0 14px',
+    minWidth: '2.6em',
+  },
+  '.cm-activeLine': { background: '#1c243880' },
+  '.cm-activeLineGutter': { background: '#1c2438' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: '#5b8dee', borderLeftWidth: '2px' },
+  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
+    background: '#2d4070 !important',
+  },
+  '.cm-matchingBracket': {
+    background: '#2d4070',
+    outline: '1px solid #5b8dee60',
+    borderRadius: '2px',
+  },
+  // Autocomplete dropdown
+  '.cm-tooltip': {
+    background: '#1e2535',
+    border: '1px solid #2a3347',
+    borderRadius: '8px',
+    boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+    color: '#e2e8f0',
+  },
+  '.cm-tooltip-autocomplete ul li[aria-selected]': {
+    background: '#5b8dee',
+    color: '#fff',
+  },
+  '.cm-completionLabel': { fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' },
+  '.cm-completionDetail': { color: '#8b9ab5', fontSize: '11px', fontStyle: 'italic' },
+  // Search panel
+  '.cm-panels': { background: '#1e2535', borderTop: '1px solid #2a3347' },
+  '.cm-panel': { padding: '6px 10px' },
+  '.cm-textfield': {
+    background: '#0f1117', border: '1px solid #2a3347',
+    borderRadius: '5px', color: '#e2e8f0', padding: '3px 7px',
+  },
+  '.cm-button': {
+    background: '#5b8dee', color: '#fff', border: 'none',
+    borderRadius: '5px', padding: '3px 10px', cursor: 'pointer',
+  },
+  '.cm-foldPlaceholder': { background: '#2a3347', border: 'none', color: '#8b9ab5' },
+}, { dark: true });
+
+// ── Syntax Highlighting ───────────────────────────────────────────────────────
+const myHighlight = HighlightStyle.define([
+  { tag: tags.keyword,         color: '#5b8dee', fontWeight: '700' },
+  { tag: tags.operatorKeyword, color: '#5b8dee', fontWeight: '700' },
+  { tag: tags.definitionKeyword, color: '#5b8dee', fontWeight: '700' },
+  { tag: tags.string,          color: '#3ecf6c' },
+  { tag: tags.number,          color: '#f6c90e' },
+  { tag: tags.bool,            color: '#f6c90e' },
+  { tag: tags.null,            color: '#f56565' },
+  { tag: tags.comment,         color: '#4a6080', fontStyle: 'italic' },
+  { tag: tags.lineComment,     color: '#4a6080', fontStyle: 'italic' },
+  { tag: tags.blockComment,    color: '#4a6080', fontStyle: 'italic' },
+  { tag: tags.operator,        color: '#f9a03f' },
+  { tag: tags.punctuation,     color: '#cbd5e1' },
+  { tag: tags.separator,       color: '#cbd5e1' },
+  { tag: tags.name,            color: '#e2e8f0' },
+  { tag: tags.typeName,        color: '#a78bfa' },
+  { tag: tags.propertyName,    color: '#93c5fd' },
+  { tag: tags.special(tags.name), color: '#a78bfa' },
+  { tag: tags.function(tags.name), color: '#60a5fa' },
+  { tag: tags.meta,            color: '#8b9ab5' },
+]);
+
+// ── dvdrental schema for autocomplete ────────────────────────────────────────
+const dvdSchema = {
+  film:          ['film_id','title','description','release_year','language_id','rental_duration','rental_rate','length','replacement_cost','rating'],
+  actor:         ['actor_id','first_name','last_name'],
+  film_actor:    ['actor_id','film_id'],
+  film_category: ['film_id','category_id'],
+  category:      ['category_id','name'],
+  language:      ['language_id','name'],
+  customer:      ['customer_id','store_id','first_name','last_name','email','address_id','active'],
+  rental:        ['rental_id','rental_date','inventory_id','customer_id','return_date','staff_id'],
+  payment:       ['payment_id','customer_id','staff_id','rental_id','amount','payment_date'],
+  inventory:     ['inventory_id','film_id','store_id'],
+  staff:         ['staff_id','first_name','last_name','address_id','email','store_id','active','username'],
+  store:         ['store_id','manager_staff_id','address_id'],
+  address:       ['address_id','address','district','city_id','postal_code','phone'],
+  city:          ['city_id','city','country_id'],
+  country:       ['country_id','country'],
+};
+
+// ── Editor factory ────────────────────────────────────────────────────────────
+function createEditor(parent, initialDoc, onRun, placeholderText) {
+  const runKeys = keymap.of([
+    { key: 'Ctrl-Enter', run() { onRun(); return true; } },
+    { key: 'Mod-Enter',  run() { onRun(); return true; } },
+  ]);
+  return new EditorView({
+    state: EditorState.create({
+      doc: initialDoc,
+      extensions: [
+        basicSetup,
+        keymap.of([indentWithTab]),
+        sql({ schema: dvdSchema, upperCaseKeywords: false }),
+        syntaxHighlighting(myHighlight),
+        myTheme,
+        runKeys,
+        ...(placeholderText ? [placeholder(placeholderText)] : []),
+        EditorView.lineWrapping,
+      ],
+    }),
+    parent,
+  });
+}
+
+function getDoc(view)       { return view.state.doc.toString(); }
+function setDoc(view, text) {
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+}
+
+// ── Exercises ─────────────────────────────────────────────────────────────────
 const EXERCISES = [
   {
     category: 'SELECT Grundlagen',
@@ -232,7 +372,7 @@ WHERE replacement_cost = (SELECT MAX(...) FROM film);`
 let db = null;
 
 async function initDB() {
-  const SQL = await initSqlJs({
+  const SQL = await window.initSqlJs({
     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${file}`
   });
   db = new SQL.Database();
@@ -294,6 +434,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// ── Exercise Editor ───────────────────────────────────────────────────────────
+const exEditorView = createEditor(
+  document.getElementById('ex-editor-container'),
+  '',
+  () => document.getElementById('ex-run-btn').click(),
+  '-- Schreib dein SQL hier…\nSELECT …'
+);
+
+// ── Free Editor ───────────────────────────────────────────────────────────────
+const freeEditorView = createEditor(
+  document.getElementById('free-editor-container'),
+  'SELECT * FROM film LIMIT 10;',
+  () => document.getElementById('free-run-btn').click(),
+  '-- Schreib beliebige SQL-Abfragen\nSELECT * FROM film LIMIT 10;'
+);
+
+document.getElementById('free-run-btn').addEventListener('click', () => {
+  if (!db) return;
+  renderResults(document.getElementById('free-result'), runQuery(getDoc(freeEditorView)));
+});
+document.getElementById('free-clear-btn').addEventListener('click', () => {
+  setDoc(freeEditorView, '');
+  document.getElementById('free-result').innerHTML = '';
+});
+
 // ── Exercise List ─────────────────────────────────────────────────────────────
 const completedSet = new Set();
 let currentEx = null;
@@ -301,16 +466,15 @@ let currentEx = null;
 function buildExerciseList() {
   const container = document.getElementById('exercise-categories');
   let html = '';
-  let globalIdx = 0;
+  let idx = 0;
   EXERCISES.forEach(cat => {
     html += `<div class="cat-label">${cat.category}</div>`;
-    cat.items.forEach((ex, i) => {
-      const id = `ex-${globalIdx}`;
-      html += `<div class="ex-item" data-id="${globalIdx}" id="item-${globalIdx}">
-        <span class="ex-num" id="num-${globalIdx}">${globalIdx + 1}</span>
+    cat.items.forEach(ex => {
+      html += `<div class="ex-item" data-id="${idx}" id="item-${idx}">
+        <span class="ex-num" id="num-${idx}">${idx + 1}</span>
         <span class="ex-name">${ex.title}</span>
       </div>`;
-      globalIdx++;
+      idx++;
     });
   });
   container.innerHTML = html;
@@ -336,12 +500,13 @@ function loadExercise(idx) {
   document.getElementById('ex-badge').textContent = ex.badge;
   document.getElementById('ex-title').textContent = ex.title;
   document.getElementById('ex-desc').innerHTML = ex.desc;
-  document.getElementById('ex-editor').value = ex.starter || '';
+  setDoc(exEditorView, ex.starter || '');
   document.getElementById('ex-hint-box').style.display = 'none';
   document.getElementById('ex-result').innerHTML = '';
   document.getElementById('ex-hint-btn').style.display = '';
   document.getElementById('ex-solution-btn').style.display = '';
   document.getElementById('ex-run-btn').style.display = '';
+  exEditorView.focus();
 }
 
 document.getElementById('ex-hint-btn').addEventListener('click', () => {
@@ -353,40 +518,19 @@ document.getElementById('ex-hint-btn').addEventListener('click', () => {
 
 document.getElementById('ex-solution-btn').addEventListener('click', () => {
   if (!currentEx) return;
-  document.getElementById('ex-editor').value = currentEx.solution;
+  setDoc(exEditorView, currentEx.solution);
+  exEditorView.focus();
 });
 
 document.getElementById('ex-run-btn').addEventListener('click', () => {
   if (!currentEx || !db) return;
-  const sql = document.getElementById('ex-editor').value;
-  const outcome = runQuery(sql);
+  const outcome = runQuery(getDoc(exEditorView));
   renderResults(document.getElementById('ex-result'), outcome);
   if (outcome.ok) {
     completedSet.add(currentEx.idx);
     const numEl = document.getElementById(`num-${currentEx.idx}`);
-    if (numEl) numEl.style.background = 'var(--green)', numEl.style.color = '#0a1a0f';
+    if (numEl) { numEl.style.background = 'var(--green)'; numEl.style.color = '#0a1a0f'; }
   }
-});
-
-// Tab: Enter key
-document.getElementById('ex-editor').addEventListener('keydown', e => {
-  if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart; e.target.value = e.target.value.slice(0,s) + '  ' + e.target.value.slice(e.target.selectionEnd); e.target.selectionStart = e.target.selectionEnd = s + 2; }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') document.getElementById('ex-run-btn').click();
-});
-
-// ── Free Editor ───────────────────────────────────────────────────────────────
-document.getElementById('free-run-btn').addEventListener('click', () => {
-  if (!db) return;
-  const sql = document.getElementById('free-editor').value;
-  renderResults(document.getElementById('free-result'), runQuery(sql));
-});
-document.getElementById('free-clear-btn').addEventListener('click', () => {
-  document.getElementById('free-editor').value = '';
-  document.getElementById('free-result').innerHTML = '';
-});
-document.getElementById('free-editor').addEventListener('keydown', e => {
-  if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart; e.target.value = e.target.value.slice(0,s) + '  ' + e.target.value.slice(e.target.selectionEnd); e.target.selectionStart = e.target.selectionEnd = s + 2; }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') document.getElementById('free-run-btn').click();
 });
 
 // ── Schema Tab ────────────────────────────────────────────────────────────────

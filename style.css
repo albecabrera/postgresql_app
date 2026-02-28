@@ -159,16 +159,32 @@ main {
 }
 .editor-label { font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: .1em; text-transform: uppercase; }
 .editor-actions { display: flex; gap: 8px; }
-.sql-editor {
-  width: 100%; min-height: 140px;
-  background: var(--bg2); color: var(--text);
-  border: none; outline: none; resize: vertical;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px; line-height: 1.7;
-  padding: 16px;
-  tab-size: 2;
+
+/* ── CodeMirror container sizing ────────────────────────────── */
+.cm-wrap { display: block; }
+.cm-wrap .cm-editor {
+  min-height: 140px;
+  outline: none !important;
 }
-.sql-editor.tall { min-height: 260px; }
+.cm-wrap-tall .cm-editor { min-height: 260px; }
+.cm-wrap .cm-scroller {
+  min-height: inherit;
+  overflow: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+}
+/* Autocomplete tooltip */
+.cm-tooltip { z-index: 200 !important; }
+.cm-tooltip.cm-tooltip-autocomplete { border-radius: 8px !important; overflow: hidden; }
+.cm-tooltip.cm-tooltip-autocomplete > ul { max-height: 200px; overflow-y: auto; }
+.cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  padding: 5px 12px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px !important;
+}
+/* Placeholder text */
+.cm-placeholder { color: #4a5a7a !important; font-style: italic; }
 
 /* ── Buttons ────────────────────────────────────────────────── */
 .btn {

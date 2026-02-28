@@ -56,7 +56,7 @@
                 <button id="ex-run-btn" class="btn btn-primary" style="display:none">▶ Ausführen</button>
               </div>
             </div>
-            <textarea id="ex-editor" class="sql-editor" placeholder="-- Schreib dein SQL hier...&#10;SELECT ..."></textarea>
+            <div id="ex-editor-container" class="cm-wrap"></div>
           </div>
           <div id="ex-hint-box" class="hint-box" style="display:none"></div>
           <div id="ex-result"></div>
@@ -75,7 +75,7 @@
               <button id="free-run-btn" class="btn btn-primary">▶ Ausführen</button>
             </div>
           </div>
-          <textarea id="free-editor" class="sql-editor tall" placeholder="-- Schreib beliebige SQL-Abfragen&#10;SELECT * FROM film LIMIT 10;"></textarea>
+          <div id="free-editor-container" class="cm-wrap cm-wrap-tall"></div>
         </div>
         <div id="free-result"></div>
       </div>
@@ -89,6 +89,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
   <script src="data.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
