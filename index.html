@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Trainer – DVD Rental</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loader-box">
+      <div class="spinner"></div>
+      <p>Datenbank wird geladen…</p>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🎬</span>
+        <div>
+          <h1>SQL Trainer</h1>
+          <span class="subtitle">DVD Rental Datenbank</span>
+        </div>
+      </div>
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="exercises">Übungen</button>
+        <button class="tab-btn" data-tab="editor">Freier Editor</button>
+        <button class="tab-btn" data-tab="schema">Schema</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- EXERCISES TAB -->
+    <div id="tab-exercises" class="tab-content active">
+      <div class="two-col">
+        <aside class="exercise-list">
+          <h2>Aufgaben</h2>
+          <div id="exercise-categories"></div>
+        </aside>
+        <section class="exercise-workspace">
+          <div class="exercise-header">
+            <span id="ex-badge" class="badge">SELECT</span>
+            <h3 id="ex-title">Wähle eine Aufgabe</h3>
+          </div>
+          <p id="ex-desc" class="ex-desc">Wähle links eine Aufgabe aus.</p>
+          <div class="editor-wrap">
+            <div class="editor-toolbar">
+              <span class="editor-label">SQL</span>
+              <div class="editor-actions">
+                <button id="ex-hint-btn" class="btn btn-ghost" style="display:none">💡 Hinweis</button>
+                <button id="ex-solution-btn" class="btn btn-ghost" style="display:none">👁 Lösung</button>
+                <button id="ex-run-btn" class="btn btn-primary" style="display:none">▶ Ausführen</button>
+              </div>
+            </div>
+            <textarea id="ex-editor" class="sql-editor" placeholder="-- Schreib dein SQL hier...&#10;SELECT ..."></textarea>
+          </div>
+          <div id="ex-hint-box" class="hint-box" style="display:none"></div>
+          <div id="ex-result"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- FREE EDITOR TAB -->
+    <div id="tab-editor" class="tab-content">
+      <div class="free-editor-wrap">
+        <div class="editor-wrap">
+          <div class="editor-toolbar">
+            <span class="editor-label">SQL – Freier Editor</span>
+            <div class="editor-actions">
+              <button id="free-clear-btn" class="btn btn-ghost">✕ Leeren</button>
+              <button id="free-run-btn" class="btn btn-primary">▶ Ausführen</button>
+            </div>
+          </div>
+          <textarea id="free-editor" class="sql-editor tall" placeholder="-- Schreib beliebige SQL-Abfragen&#10;SELECT * FROM film LIMIT 10;"></textarea>
+        </div>
+        <div id="free-result"></div>
+      </div>
+    </div>
+
+    <!-- SCHEMA TAB -->
+    <div id="tab-schema" class="tab-content">
+      <div class="schema-grid" id="schema-grid"></div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
